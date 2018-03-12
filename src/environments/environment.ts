@@ -5,8 +5,4 @@
 
 export const environment = {
   production: false,
-  w:900,
-  h:900,
-  globals:"0",
-  globali:"0"
 };
