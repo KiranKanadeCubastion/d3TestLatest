@@ -3,14 +3,18 @@ import {NgModule} from '@angular/core';
 
 
 import {AppComponent} from './app.component';
+import { D3Component } from './d3/d3.component';
+import {FormsModule} from "@angular/forms";
 
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    D3Component,
   ],
   imports: [
-    BrowserModule
+    BrowserModule,
+    FormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]
