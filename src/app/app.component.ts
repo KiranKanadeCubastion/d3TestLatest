@@ -21,6 +21,7 @@ export class AppComponent implements OnInit, AfterViewInit, DoCheck {
   currentIndex: any = '0';
   globalIndex: any;
   currArrayIndex: any = '0';
+  NotlastElement: boolean = true;
 
   curr_iterator = {
     type: '0',
@@ -143,6 +144,7 @@ export class AppComponent implements OnInit, AfterViewInit, DoCheck {
 
 
   ButtonClicked(type) {
+    this.NotlastElement=true;
     this.Form.enable();
     this.globalIndex = this.globalIndex + 1;
     this.curr_iterator = {
@@ -165,6 +167,10 @@ export class AppComponent implements OnInit, AfterViewInit, DoCheck {
     d3.select('#g' + this.currentType + this.currentIndex).remove();
     this.information.info.splice(this.currArrayIndex, 1);
     this.currArrayIndex = '0';
+    if (this.information.info.length===0){
+      this.NotlastElement=false;
+    }
+
   }
 
   dynamic(d) {
