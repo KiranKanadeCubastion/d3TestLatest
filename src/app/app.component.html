@@ -1,12 +1,56 @@
-<h1>d3</h1>
-<div class="row">
-  <div class="col-xs-12">
-    <button class="btn btn-success" (click)="draggable(2)" >Add Image</button>
-    <button class="btn btn-success"(click)="draggable(3)">Add Video</button>
-    <button class="btn btn-success"(click)="draggable(1)">Add rectangle</button>
-    <button class="btn btn-success"(click)="draggable(4)">Add text</button>
-    <button class="btn btn-danger" (click)="exitFunc()">Remove</button>
+<div style="display: flex; flex-direction: column; height: 100%;">
+  <div class="container">
+    <div class="row">
+      <div class="col-xs-12">
+        <button class="btn btn-success" (click)="ButtonClicked(2)">Add Image</button>
+        <button class="btn btn-success" (click)="ButtonClicked(3)">Add Video</button>
+        <button class="btn btn-success" (click)="ButtonClicked(1)">Add rectangle</button>
+        <button class="btn btn-success" (click)="ButtonClicked(4)">Add text</button>
+        <button class="btn btn-danger" (click)="exitFunc()">Remove</button>
+        <p></p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: row; height: 100%; justify-content: center;">
+
+    <div id="section" style="height: 90%; width: 70%; border: 1px solid black;" #divId>
+
+    </div>
+
+    <div style="width: 30%; height: 90%">
+      <table align="right" border="1px" style="margin-right: 60px">
+        <tr class="form-group">
+          <form style="padding: 20px" [formGroup]="Form">
+            <label>X Coordinate: </label>
+            <input id="xCoo" type="number"
+                   class="form-control"
+                   formControlName="xCoo"
+                   min="1"
+                   [max]="reverseWidthFunc(svgWidth) - curr_iterator.width"
+                   name="xCoordinate" [(ngModel)]="information.info[currArrayIndex].xCoordinate" (input)="dynamic(this)" ><br>
+            <label>Y Coordinate: </label>
+            <input id="yCoo" type="number"
+                   class="form-control"
+                   formControlName="yCoo"
+                   min="1"
+                   [max]="reverseHeightFunc(svgHeight) - curr_iterator.height"
+                   name="yCoordinate" [(ngModel)]="information.info[currArrayIndex].yCoordinate" (input)="dynamic(this)"><br>
+            <label>Height: </label>
+            <input id="height" type="number"
+                   class="form-control"
+                   formControlName="height"
+                   min="1" max="100"
+                   name="Height" [(ngModel)]="information.info[currArrayIndex].height" (input)="dynamic(this)"><br>
+            <label>Width: </label>
+            <input id="width" type="number"
+                   class="form-control"
+                   formControlName="width"
+                   min="1" max="100"
+                   name="Width" [(ngModel)]="information.info[currArrayIndex].width" (input)="dynamic(this)">
+          </form>
+        </tr>
+      </table>
+    </div>
   </div>
 </div>
-
-
