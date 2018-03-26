@@ -25,7 +25,6 @@ export class AppComponent implements OnInit {
 
     this.service.container.subscribe((data) => {
       this.container = data;
-      console.log(this.container);
     });
 
     this.Form = new FormGroup({
@@ -41,7 +40,8 @@ export class AppComponent implements OnInit {
   ButtonClicked1(type) {
     this.child1.ButtonClicked(type);
   }
-ButtonClicked2(type) {
+
+  ButtonClicked2(type) {
     this.child2.ButtonClicked(type);
   }
 
