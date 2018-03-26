@@ -1,6 +1,7 @@
 import {AfterViewInit, Component, DoCheck, ElementRef, Input, ViewChild} from '@angular/core';
 import * as d3 from 'd3';
-import {Information} from '../app.component.service';
+import {DemoGroupIvgSection} from "../Common/demo-group-ivg-section.model";
+import {DemoGroupIvgItem} from "../Common/demo-group-ivg-item.model";
 
 @Component({
   selector: 'app-d3',
@@ -13,6 +14,8 @@ export class D3Component implements AfterViewInit, DoCheck {
 
   @ViewChild('divId') divElement: ElementRef;
 
+  @Input() section: DemoGroupIvgSection;
+
   svg;
   currentType: any = '0';
   svgWidth: number;
@@ -21,26 +24,10 @@ export class D3Component implements AfterViewInit, DoCheck {
   globalIndex: any;
   currArrayIndex: any = '0';
   NotlastElement: boolean = true;
-  curr_iterator = {
-    type: '0',
-    index: 0,
-    height: 30,
-    width: 30,
-    xCoordinate: 10,
-    yCoordinate: 10
-  };
 
+  curr_iterator: DemoGroupIvgItem = DemoGroupIvgItem.newItem('Image',0);
 
-
-
-  /*
-
-    @Input() NotlastElement = true;
-    @Input() globalIndex: any;
-    @Input() curr_iterator: any;
-  */
-
-  constructor(public information: Information) {
+  constructor() {
   }
 
   ngDoCheck() {
@@ -53,68 +40,60 @@ export class D3Component implements AfterViewInit, DoCheck {
 
   ngAfterViewInit(): void {
 
+    if (this.section) {
+      console.log('section not null');
+      this.svg = d3.select("#"+this.section.name).append('svg')
+        //.attr('id', 'svgBorder')
+        .attr('width', "100%")
+        .attr('height', "100%");
+      console.log('svg is appended to div:' + this.section.name);
 
-    this.svg = d3.select('#section').append('svg')
-      .attr('id', 'svgBorder')
-      .attr('width', "100%")
-      .attr('height', "100%");
+      this.svg.append('rect')
+        .attr('x', 0)
+        .attr('y', 0)
+        .attr('height', "100%")
+        .attr('width', "100%")
+        .attr('fill-opacity', 0)
+        .style('stroke', 'black')
+        .style('stroke-width', 1)
+        .attr('id', 'border'+this.section.name);
 
-    this.svg.append('rect')
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('height', "100%")
-      .attr('width', "100%")
-      .attr('fill-opacity', 0)
-      .style('stroke', 'black')
-      .style('stroke-width', 1)
-      .attr('id', 'border');
 
-    console.log(this.information);
-    this.information.info.forEach((value, index, array) => {
-      console.log('calling draggable ', value);
-      this.draggable(value, this);
-    });
-    this.initIndex();
+      this.section.items.forEach((value, index, array) => {
+        console.log('calling draggable ', value);
+        this.draggable(value, this);
+      });
+      this.initIndex();
+    } else {
+      console.log('section null');
+    }
   }
 
   initIndex() {
-    this.globalIndex = this.information.info.length - 1;
+    this.globalIndex = this.section.items.length - 1;
     console.log("Index:" + this.globalIndex);
   }
-
-  // subject(d) {
-  //   let t = d3.select(<any>this);
-  //   return {x: t.attr('x', d['x']), y: t.attr('y', d['y'])};
-  // }
-  //
-  // subjectRect(d) {
-  //   let t = d3.select(<any>this);
-  //   return {x: t.attr('x'), y: t.attr('y')};
-  // }
   selected(selectedType, selectedIndex) {
-    console.log('PREVselected' + '#g' + this.currentType + this.currentIndex);
-    d3.select('#g' + this.currentType + this.currentIndex)
+    console.log('PREVselected' + '#g' + this.currentType+ this.section.name + this.currentIndex);
+    d3.select('#g' + this.currentType+ this.section.name  + this.currentIndex)
       .style('stroke-width', '0');
 
     if (selectedIndex !== '-1') {
       //this.Form.enable();
-      this.currentType = selectedType;
+      this.currentType= selectedType;
       this.currentIndex = <any>selectedIndex;
-      d3.select('#g' + selectedType + selectedIndex)
+      d3.select('#g' + selectedType + this.section.name + selectedIndex)
         .style('stroke', 'red')
         .style('stroke-width', '.4');
 
-      console.log('currently_selected' + '#g' + this.currentType + this.currentIndex);
+      console.log('currently_selected' + '#g' + this.currentType+ this.section.name + this.currentIndex);
 
-      this.information.info.forEach((value, index, array) => {
-        if (value.index == selectedIndex && value.type == selectedType) {
+      this.section.items.forEach((value, index, array) => {
+        if (value.id == selectedIndex && value.type_cd == selectedType) {
           this.currArrayIndex = index;
           this.curr_iterator = value;
         }
       });
-    }
-    else {
-      //this.Form.disable();
     }
   }
 
@@ -142,18 +121,10 @@ export class D3Component implements AfterViewInit, DoCheck {
 
 
   ButtonClicked(type) {
-    this.NotlastElement=true;
+    this.NotlastElement = true;
     this.globalIndex = this.globalIndex + 1;
-    this.curr_iterator = {
-      type: type,
-      index: this.globalIndex,
-      height: 30,
-      width: 30,
-      xCoordinate: 10,
-      yCoordinate: 10
-    };
-    this.information.info.push(this.curr_iterator);
-    console.log(this.information.info);
+    this.curr_iterator = DemoGroupIvgItem.newItem(type,this.globalIndex);
+    this.section.items.push(this.curr_iterator);
     this.draggable(this.curr_iterator, this);
     this.selected(type, this.globalIndex);
 
@@ -161,10 +132,10 @@ export class D3Component implements AfterViewInit, DoCheck {
 
   exitFunc() {
     //this.Form.disable();
-    d3.select('#g' + this.currentType + this.currentIndex).remove();
-    this.information.info.splice(this.currArrayIndex, 1);
+    d3.select('#g' + this.currentType+ this.section.name + this.currentIndex).remove();
+    this.section.items.splice(this.currArrayIndex, 1);
     this.currArrayIndex = '0';
-    if (this.information.info.length === 0) {
+    if (this.section.items.length === 0) {
       this.NotlastElement = false;
     }
 
@@ -173,10 +144,10 @@ export class D3Component implements AfterViewInit, DoCheck {
   /*
 
    dynamic(d) {
-   d3.select('#g' + this.currentType + this.currentIndex).remove();
+   d3.select('#g' + this.currentType+ this.section.name + this.currentIndex).remove();
    console.log(this.curr_iterator);
    this.draggable(this.curr_iterator, d);
-   d3.select('#g' + this.currentType + this.currentIndex)
+   d3.select('#g' + this.currentType+ this.section.name + this.currentIndex)
    .style('stroke', 'red')
    .style('stroke-width', '.4');
    }
@@ -184,45 +155,29 @@ export class D3Component implements AfterViewInit, DoCheck {
 
 
   draggable(iteratorInfo, self) {
-    const typeString: string = iteratorInfo.type;
+    const typeString: string = iteratorInfo.type_cd;
     const indexString: number = iteratorInfo.index;
+    const sectionstring: string = this.section.name;
     const dragBarWidth = 2;
 
-    d3.select('#border').on('click', function () {
+    d3.select('#border'+this.section.name).on('click', function () {
       self.selected('-1', '-1');
     });
 
     const newg = this.svg.append('g')
-      .attr('id', 'g' + typeString + indexString)
+      .attr('id', 'g' + typeString +sectionstring+ indexString)
       .data([{
-        x: Math.max(0, Math.min(this.percentageWidthFunc(iteratorInfo.xCoordinate), self.svgWidth - this.percentageWidthFunc(iteratorInfo.width))),
-        y: Math.max(0, Math.min(this.percentageHeightFunc(iteratorInfo.yCoordinate), self.svgHeight - this.percentageHeightFunc(iteratorInfo.height)))
+        x: Math.max(0, Math.min(this.percentageWidthFunc(iteratorInfo.x_coordinate), self.svgWidth - this.percentageWidthFunc(iteratorInfo.width))),
+        y: Math.max(0, Math.min(this.percentageHeightFunc(iteratorInfo.y_coordinate), self.svgHeight - this.percentageHeightFunc(iteratorInfo.height)))
       }])
       .on('click', function () {
         console.log('clicked ', typeString, indexString);
         self.selected(typeString, indexString);
       });
 
-    switch (iteratorInfo.type) {
-      case 1:
-        let dragrect = newg.append('rect')                                   // rectangle
-          .attr('x', function (d) {
-            return d.x;
-          })
-          .attr('y', function (d) {
-            return d.y;
-          })
-          .attr('height', this.percentageHeightFunc(iteratorInfo.height))
-          .attr('width', this.percentageWidthFunc(iteratorInfo.width))
-          .attr('fill-opacity', .5)
-          .attr('cursor', 'move')
-          .attr('id', 'dragrect' + typeString + indexString)
-          .call(<any>d3.drag()
-          // .subject(this.subjectRect)
-            .on('drag', dragmove));
-        break;
-      case 2:
-        dragrect = newg.append('image')                                   // image
+    switch (iteratorInfo.type_cd) {
+      case 'Image':
+        let dragrect = newg.append('image')                                   // image
           .attr('x', function (d) {
             return d.x;
           })
@@ -234,12 +189,13 @@ export class D3Component implements AfterViewInit, DoCheck {
           .attr('xlink:href', 'https://static.pexels.com/photos/248797/pexels-photo-248797.jpeg')
           .attr('fill-opacity', .5)
           .attr('cursor', 'move')
-          .attr('id', 'dragrect' + typeString + indexString)
+          .attr('id', 'dragrect' + typeString +sectionstring+ indexString)
           .call(<any>d3.drag()
           //.subject(this.subjectRect)
             .on('drag', dragmove));
+        console.log('I am here in image');
         break;
-      case  3:
+      case  'Video':
         dragrect = newg.append('foreignObject')                             // video
           .attr('x', function (d) {
             return d.x;
@@ -247,7 +203,7 @@ export class D3Component implements AfterViewInit, DoCheck {
           .attr('y', function (d) {
             return d.y;
           })
-          .attr('id', 'dragrect' + typeString + indexString)
+          .attr('id', 'dragrect' + typeString +sectionstring+ indexString)
           .attr('height', this.percentageHeightFunc(iteratorInfo.height))
           .attr('width', this.percentageWidthFunc(iteratorInfo.width))
           .attr('cursor', 'move')
@@ -263,7 +219,7 @@ export class D3Component implements AfterViewInit, DoCheck {
           .attr('src', 'http://clips.vorwaerts-gmbh.de/VfE_html5.mp4')
           .attr('type', 'video/mp4');
         break;
-      case  4:
+      case  'Text':
         dragrect = newg.append('foreignObject')                             // text
           .attr('x', function (d) {
             return d.x;
@@ -271,7 +227,7 @@ export class D3Component implements AfterViewInit, DoCheck {
           .attr('y', function (d) {
             return d.y;
           })
-          .attr('id', 'dragrect' + typeString + indexString)
+          .attr('id', 'dragrect' + typeString +sectionstring+ indexString)
           .attr('height', this.percentageHeightFunc(iteratorInfo.height))
           .attr('width', this.percentageWidthFunc(iteratorInfo.width))
           .attr('cursor', 'move')
@@ -300,7 +256,7 @@ export class D3Component implements AfterViewInit, DoCheck {
       .attr('height', this.percentageHeightFunc(iteratorInfo.height) - dragBarWidth)
       .attr('width', dragBarWidth)
       .attr('fill-opacity', .5)
-      .attr('id', 'dragbarleft' + typeString + indexString)
+      .attr('id', 'dragbarleft' + typeString +sectionstring+ indexString)
       .attr('cursor', 'ew-resize')
       .call(<any>d3.drag()
       // .subject(this.subject)
@@ -316,7 +272,7 @@ export class D3Component implements AfterViewInit, DoCheck {
       .attr('height', this.percentageHeightFunc(iteratorInfo.height) - dragBarWidth)
       .attr('width', dragBarWidth)
       .attr('fill-opacity', .5)
-      .attr('id', 'dragbarright' + typeString + indexString)
+      .attr('id', 'dragbarright' + typeString +sectionstring+ indexString)
       .attr('cursor', 'ew-resize')
       .call(<any>d3.drag()
       // .subject(this.subject)
@@ -332,7 +288,7 @@ export class D3Component implements AfterViewInit, DoCheck {
       .attr('height', dragBarWidth)
       .attr('width', this.percentageWidthFunc(iteratorInfo.width) - dragBarWidth)
       .attr('fill-opacity', .5)
-      .attr('id', 'dragbartop' + typeString + indexString)
+      .attr('id', 'dragbartop' + typeString +sectionstring+ indexString)
       .attr('cursor', 'ns-resize')
       .call(<any>d3.drag()
       // .subject(this.subject)
@@ -348,7 +304,7 @@ export class D3Component implements AfterViewInit, DoCheck {
       .attr('height', dragBarWidth)
       .attr('width', this.percentageWidthFunc(iteratorInfo.width) - dragBarWidth)
       .attr('fill-opacity', .5)
-      .attr('id', 'dragbarbottom' + typeString + indexString)
+      .attr('id', 'dragbarbottom' + typeString +sectionstring+ indexString)
       .attr('cursor', 'ns-resize')
       .call(<any>d3.drag()
       // .subject(this.subject)
@@ -364,7 +320,7 @@ export class D3Component implements AfterViewInit, DoCheck {
       .attr('r', 1.5)
       .attr('fill-opacity', 0)
       .attr('cursor', 'nwse-resize')
-      .attr('id', 'draglefttopcorner' + typeString + indexString)
+      .attr('id', 'draglefttopcorner' + typeString +sectionstring+ indexString)
       .call(<any>d3.drag()
       // .subject(this.subject)
         .on('drag', ltdragresize));
@@ -379,7 +335,7 @@ export class D3Component implements AfterViewInit, DoCheck {
       .attr('r', 1.5)
       .attr('fill-opacity', 0)
       .attr('cursor', 'nesw-resize')
-      .attr('id', 'dragleftbottomcorner' + typeString + indexString)
+      .attr('id', 'dragleftbottomcorner' + typeString +sectionstring+ indexString)
       .call(<any>d3.drag()
       // .subject(this.subject)
         .on('drag', lbdragresize));
@@ -394,7 +350,7 @@ export class D3Component implements AfterViewInit, DoCheck {
       .attr('r', 1.5)
       .attr('fill-opacity', 0)
       .attr('cursor', 'nesw-resize')
-      .attr('id', 'dragrighttopcorner' + typeString + indexString)
+      .attr('id', 'dragrighttopcorner' + typeString +sectionstring+ indexString)
       .call(<any>d3.drag()
       // .subject(this.subject)
         .on('drag', rtdragresize));
@@ -407,7 +363,7 @@ export class D3Component implements AfterViewInit, DoCheck {
         return d.y + self.percentageHeightFunc(iteratorInfo.height);
       })
       .attr('fill-opacity', 0)
-      .attr('id', 'dragrightbottomcorner' + typeString + indexString)
+      .attr('id', 'dragrightbottomcorner' + typeString +sectionstring+ indexString)
       .attr('r', 1.5)
       .attr('cursor', 'nwse-resize')
       .call(<any>d3.drag()
@@ -416,61 +372,61 @@ export class D3Component implements AfterViewInit, DoCheck {
 
     function dragmove(d) {
       self.selected(typeString, indexString);
-      d3.select('#dragrect' + typeString + indexString)
+      d3.select('#dragrect' + typeString +sectionstring+ indexString)
         .attr('x', d.x = Math.max(0, Math.min(self.svgWidth - self.percentageWidthFunc(iteratorInfo.width), d3.event.x)))
         .attr('y', d.y = Math.max(0, Math.min(self.svgHeight - self.percentageHeightFunc(iteratorInfo.height), d3.event.y)));
-      iteratorInfo.xCoordinate = self.reverseWidthFunc(d.x);
-      iteratorInfo.yCoordinate = self.reverseHeightFunc(d.y);
-      d3.select('#dragbarleft' + typeString + indexString)
+      iteratorInfo.x_coordinate = self.reverseWidthFunc(d.x);
+      iteratorInfo.y_coordinate = self.reverseHeightFunc(d.y);
+      d3.select('#dragbarleft' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
           return d['x'] - (dragBarWidth / 2);
         })
         .attr('y', function (d) {
           return d['y'] + (dragBarWidth / 2);
         });
-      d3.select('#dragbarright' + typeString + indexString)
+      d3.select('#dragbarright' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2);
         })
         .attr('y', function (d) {
           return d['y'] + (dragBarWidth / 2);
         });
-      d3.select('#dragbartop' + typeString + indexString)
+      d3.select('#dragbartop' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
           return d['x'] + (dragBarWidth / 2);
         })
         .attr('y', function (d) {
           return d['y'] - (dragBarWidth / 2);
         });
-      d3.select('#dragbarbottom' + typeString + indexString)
+      d3.select('#dragbarbottom' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
           return d['x'] + (dragBarWidth / 2);
         })
         .attr('y', function (d) {
           return d['y'] + self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2);
         });
-      d3.select('#draglefttopcorner' + typeString + indexString)
+      d3.select('#draglefttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'];
         })
         .attr('cy', function (d) {
           return d['y'];
         });
-      d3.select('#dragleftbottomcorner' + typeString + indexString)
+      d3.select('#dragleftbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'];
         })
         .attr('cy', function (d) {
           return d['y'] + self.percentageHeightFunc(iteratorInfo.height);
         });
-      d3.select('#dragrighttopcorner' + typeString + indexString)
+      d3.select('#dragrighttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         })
         .attr('cy', function (d) {
           return d['y'];
         });
-      d3.select('#dragrightbottomcorner' + typeString + indexString)
+      d3.select('#dragrightbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         })
@@ -485,36 +441,36 @@ export class D3Component implements AfterViewInit, DoCheck {
       let oldx = d.x;
       d.x = Math.max(0, Math.min(d.x + self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2), d3.event.x));
       iteratorInfo.width = self.reverseWidthFunc(self.percentageWidthFunc(iteratorInfo.width) + (oldx - d.x));
-      d3.select('#dragbarleft' + typeString + indexString)
+      d3.select('#dragbarleft' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
           return d['x'] - (dragBarWidth / 2);
         });
 
-      d3.select('#dragrect' + typeString + indexString)
+      d3.select('#dragrect' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
-          iteratorInfo.xCoordinate = self.reverseWidthFunc(d['x']);
+          iteratorInfo.x_coordinate = self.reverseWidthFunc(d['x']);
           return d['x'];
         })
         .attr('width', self.percentageWidthFunc(iteratorInfo.width));
 
-      d3.select('#dragbartop' + typeString + indexString)
+      d3.select('#dragbartop' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
           return d['x'] + (dragBarWidth / 2);
         })
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - dragBarWidth);
-      d3.select('#dragbarbottom' + typeString + indexString)
+      d3.select('#dragbarbottom' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
           return d['x'] + (dragBarWidth / 2);
         })
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - dragBarWidth);
-      d3.select('#draglefttopcorner' + typeString + indexString)
+      d3.select('#draglefttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'];
         })
         .attr('cy', function (d) {
           return d['y'];
         });
-      d3.select('#dragleftbottomcorner' + typeString + indexString)
+      d3.select('#dragleftbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'];
         })
@@ -527,25 +483,25 @@ export class D3Component implements AfterViewInit, DoCheck {
       self.selected(typeString, indexString);
       let dragx = Math.max(d['x'] + (dragBarWidth / 2), Math.min(self.svgWidth, d['x'] + self.percentageWidthFunc(iteratorInfo.width) + d3.event.dx));
       iteratorInfo.width = self.reverseWidthFunc(dragx - d['x']);
-      d3.select('#dragbarright' + typeString + indexString)
+      d3.select('#dragbarright' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
           return dragx - (dragBarWidth / 2);
         });
-      d3.select('#dragrect' + typeString + indexString)
+      d3.select('#dragrect' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width));
-      d3.select('#dragbartop' + typeString + indexString)
+      d3.select('#dragbartop' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - dragBarWidth);
-      d3.select('#dragbarbottom' + typeString + indexString)
+      d3.select('#dragbarbottom' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - dragBarWidth);
 
-      d3.select('#dragrighttopcorner' + typeString + indexString)
+      d3.select('#dragrighttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         })
         .attr('cy', function (d) {
           return d['y'];
         });
-      d3.select('#dragrightbottomcorner' + typeString + indexString)
+      d3.select('#dragrightbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         })
@@ -559,36 +515,36 @@ export class D3Component implements AfterViewInit, DoCheck {
       let oldy = d['y'];
       d['y'] = Math.max(0, Math.min(d['y'] + self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2), d3.event['y']));
       iteratorInfo.height = self.reverseHeightFunc(self.percentageHeightFunc(iteratorInfo.height) + (oldy - d['y']));
-      d3.select('#dragbartop' + typeString + indexString)
+      d3.select('#dragbartop' + typeString +sectionstring+ indexString)
         .attr('y', function (d) {
           return d['y'] - (dragBarWidth / 2);
         });
 
-      d3.select('#dragrect' + typeString + indexString)
+      d3.select('#dragrect' + typeString +sectionstring+ indexString)
         .attr('y', function (d) {
-          iteratorInfo.yCoordinate = self.reverseHeightFunc(d['y']);
+          iteratorInfo.y_coordinate = self.reverseHeightFunc(d['y']);
           return d['y'];
         })
         .attr('height', self.percentageHeightFunc(iteratorInfo.height));
 
-      d3.select('#dragbarleft' + typeString + indexString)
+      d3.select('#dragbarleft' + typeString +sectionstring+ indexString)
         .attr('y', function (d) {
           return d['y'] + (dragBarWidth / 2);
         })
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - dragBarWidth);
-      d3.select('#dragbarright' + typeString + indexString)
+      d3.select('#dragbarright' + typeString +sectionstring+ indexString)
         .attr('y', function (d) {
           return d['y'] + (dragBarWidth / 2);
         })
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - dragBarWidth);
-      d3.select('#draglefttopcorner' + typeString + indexString)
+      d3.select('#draglefttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'];
         })
         .attr('cy', function (d) {
           return d['y'];
         });
-      d3.select('#dragrighttopcorner' + typeString + indexString)
+      d3.select('#dragrighttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         })
@@ -601,18 +557,18 @@ export class D3Component implements AfterViewInit, DoCheck {
       self.selected(typeString, indexString);
       let dragy = Math.max(d['y'] + (dragBarWidth / 2), Math.min(self.svgHeight, d['y'] + self.percentageHeightFunc(iteratorInfo.height) + d3.event.dy));
       iteratorInfo.height = self.reverseHeightFunc(dragy - d['y']);
-      d3.select('#dragbarbottom' + typeString + indexString)
+      d3.select('#dragbarbottom' + typeString +sectionstring+ indexString)
         .attr('y', function () {
           return dragy - (dragBarWidth / 2);
         });
-      d3.select('#dragrect' + typeString + indexString)
+      d3.select('#dragrect' + typeString +sectionstring+ indexString)
         .attr('height', self.percentageHeightFunc(iteratorInfo.height));
-      d3.select('#dragbarleft' + typeString + indexString)
+      d3.select('#dragbarleft' + typeString +sectionstring+ indexString)
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - dragBarWidth);
-      d3.select('#dragbarright' + typeString + indexString)
+      d3.select('#dragbarright' + typeString +sectionstring+ indexString)
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - dragBarWidth);
 
-      d3.select('#dragleftbottomcorner' + typeString + indexString)
+      d3.select('#dragleftbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'];
         })
@@ -620,7 +576,7 @@ export class D3Component implements AfterViewInit, DoCheck {
           return d['y'] + self.percentageHeightFunc(iteratorInfo.height);
         });
 
-      d3.select('#dragrightbottomcorner' + typeString + indexString)
+      d3.select('#dragrightbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         })
@@ -640,19 +596,19 @@ export class D3Component implements AfterViewInit, DoCheck {
 
       iteratorInfo.height = self.reverseHeightFunc(self.percentageHeightFunc(iteratorInfo.height) + (oldy - d['y']));
 
-      d3.select('#dragrect' + typeString + indexString)
+      d3.select('#dragrect' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width))
         .attr('height', self.percentageHeightFunc(iteratorInfo.height))
         .attr('x', function (d) {
-          iteratorInfo.xCoordinate = self.reverseWidthFunc(d['x']);
+          iteratorInfo.x_coordinate = self.reverseWidthFunc(d['x']);
           return d['x'];
         })
         .attr('y', function (d) {
-          iteratorInfo.yCoordinate = self.reverseHeightFunc(d['y']);
+          iteratorInfo.y_coordinate = self.reverseHeightFunc(d['y']);
           return d['y'];
         });
 
-      d3.select('#dragbartop' + typeString + indexString)
+      d3.select('#dragbartop' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2))
         .attr('x', function (d) {
           return d['x'];
@@ -660,7 +616,7 @@ export class D3Component implements AfterViewInit, DoCheck {
         .attr('y', function (d) {
           return d['y'];
         });
-      d3.select('#dragbarleft' + typeString + indexString)
+      d3.select('#dragbarleft' + typeString +sectionstring+ indexString)
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2))
         .attr('x', function (d) {
           return d['x'];
@@ -668,29 +624,29 @@ export class D3Component implements AfterViewInit, DoCheck {
         .attr('y', function (d) {
           return d['y'];
         });
-      d3.select('#dragbarbottom' + typeString + indexString)
+      d3.select('#dragbarbottom' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2))
         .attr('x', function (d) {
           return d['x'];
         });
 
-      d3.select('#dragbarright' + typeString + indexString)
+      d3.select('#dragbarright' + typeString +sectionstring+ indexString)
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2))
         .attr('y', function (d) {
           return d['y'];
         });
-      d3.select('#draglefttopcorner' + typeString + indexString)
+      d3.select('#draglefttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + 1;
         })
         .attr('cy', function (d) {
           return d['y'] + 1;
         });
-      d3.select('#dragleftbottomcorner' + typeString + indexString)
+      d3.select('#dragleftbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + 1;
         });
-      d3.select('#dragrighttopcorner' + typeString + indexString)
+      d3.select('#dragrighttopcorner' + typeString +sectionstring+ indexString)
         .attr('cy', function (d) {
           return d['y'] + 1;
         });
@@ -705,35 +661,35 @@ export class D3Component implements AfterViewInit, DoCheck {
       let dragx = Math.max(d['x'] + (dragBarWidth / 2), Math.min(self.svgWidth, d['x'] + self.percentageWidthFunc(iteratorInfo.width) + d3.event.dx));
       iteratorInfo.width = self.reverseWidthFunc(dragx - d['x']);
 
-      d3.select('#dragrect' + typeString + indexString)
+      d3.select('#dragrect' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width))
         .attr('height', self.percentageHeightFunc(iteratorInfo.height));
-      d3.select('#dragbartop' + typeString + indexString)
+      d3.select('#dragbartop' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - dragBarWidth);              // - dragBarWidth ??
-      d3.select('#dragbarleft' + typeString + indexString)
+      d3.select('#dragbarleft' + typeString +sectionstring+ indexString)
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - dragBarWidth);
-      d3.select('#dragbarbottom' + typeString + indexString)
+      d3.select('#dragbarbottom' + typeString +sectionstring+ indexString)
         .attr('y', function () {
           return dragy - (dragBarWidth / 2);
         })
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - dragBarWidth);
-      d3.select('#dragbarright' + typeString + indexString)
+      d3.select('#dragbarright' + typeString +sectionstring+ indexString)
         .attr('x', function () {
           return dragx - (dragBarWidth / 2);
         })
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - dragBarWidth);
-      d3.select('#dragrightbottomcorner' + typeString + indexString)
+      d3.select('#dragrightbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         })
         .attr('cy', function (d) {
           return d['y'] + self.percentageHeightFunc(iteratorInfo.height);
         });
-      d3.select('#dragleftbottomcorner' + typeString + indexString)
+      d3.select('#dragleftbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cy', function (d) {
           return d['y'] + self.percentageHeightFunc(iteratorInfo.height);
         });
-      d3.select('#dragrighttopcorner' + typeString + indexString)
+      d3.select('#dragrighttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         });
@@ -749,24 +705,24 @@ export class D3Component implements AfterViewInit, DoCheck {
       d['x'] = Math.max(0, Math.min(d['x'] + self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2), d3.event.x));
       iteratorInfo.width = self.reverseWidthFunc(self.percentageWidthFunc(iteratorInfo.width) + (oldx - d['x']));
 
-      d3.select('#dragrect' + typeString + indexString)
+      d3.select('#dragrect' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width))
         .attr('height', self.percentageHeightFunc(iteratorInfo.height))
         .attr('x', function (d) {
-          iteratorInfo.xCoordinate = self.reverseWidthFunc(d['x']);
+          iteratorInfo.x_coordinate = self.reverseWidthFunc(d['x']);
           return d['x'];
         });
-      d3.select('#dragbartop' + typeString + indexString)
+      d3.select('#dragbartop' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2))
         .attr('x', function (d) {
           return d['x'];
         });
-      d3.select('#dragbarleft' + typeString + indexString)
+      d3.select('#dragbarleft' + typeString +sectionstring+ indexString)
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth) / 2)
         .attr('x', function (d) {
           return d['x'] - (dragBarWidth / 2);
         });
-      d3.select('#dragbarbottom' + typeString + indexString)
+      d3.select('#dragbarbottom' + typeString +sectionstring+ indexString)
         .attr('y', function (d) {
           return dragy - (dragBarWidth);
         })
@@ -774,20 +730,20 @@ export class D3Component implements AfterViewInit, DoCheck {
         .attr('x', function (d) {
           return d['x'];
         });
-      d3.select('#dragbarright' + typeString + indexString)
+      d3.select('#dragbarright' + typeString +sectionstring+ indexString)
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - dragBarWidth);
-      d3.select('#dragleftbottomcorner' + typeString + indexString)
+      d3.select('#dragleftbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + 1;
         })
         .attr('cy', function (d) {
           return d['y'] + self.percentageHeightFunc(iteratorInfo.height) - 1;
         });
-      d3.select('#draglefttopcorner' + typeString + indexString)
+      d3.select('#draglefttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + 1;
         });
-      d3.select('#dragrightbottomcorner' + typeString + indexString)
+      d3.select('#dragrightbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cy', function (d) {
           return d['y'] + self.percentageHeightFunc(iteratorInfo.height) - 1;
         });
@@ -800,26 +756,26 @@ export class D3Component implements AfterViewInit, DoCheck {
       iteratorInfo.height = self.reverseHeightFunc(self.percentageHeightFunc(iteratorInfo.height) + (oldy - d['y']));
       let dragx = Math.max(d['x'] + (dragBarWidth / 2), Math.min(self.svgWidth, d['x'] + self.percentageWidthFunc(iteratorInfo.width) + d3.event.dx));
       iteratorInfo.width = self.reverseWidthFunc(dragx - d['x']);
-      d3.select('#dragrect' + typeString + indexString)
+      d3.select('#dragrect' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width))
         .attr('height', self.percentageHeightFunc(iteratorInfo.height))
         .attr('y', function (d) {
-          iteratorInfo.yCoordinate = self.reverseHeightFunc(d['y']);
+          iteratorInfo.y_coordinate = self.reverseHeightFunc(d['y']);
           return d['y'];
         });
-      d3.select('#dragbartop' + typeString + indexString)
+      d3.select('#dragbartop' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth) / 2)
         .attr('y', function (d) {
           return d['y'];
         });
-      d3.select('#dragbarleft' + typeString + indexString)
+      d3.select('#dragbarleft' + typeString +sectionstring+ indexString)
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth) / 2)
         .attr('y', function (d) {
           return d['y'];
         });
-      d3.select('#dragbarbottom' + typeString + indexString)
+      d3.select('#dragbarbottom' + typeString +sectionstring+ indexString)
         .attr('width', self.percentageWidthFunc(iteratorInfo.width) - dragBarWidth);
-      d3.select('#dragbarright' + typeString + indexString)
+      d3.select('#dragbarright' + typeString +sectionstring+ indexString)
         .attr('x', function (d) {
           return dragx - (dragBarWidth / 2);
         })
@@ -827,18 +783,18 @@ export class D3Component implements AfterViewInit, DoCheck {
           return d['y'];
         })
         .attr('height', self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth) / 2);
-      d3.select('#dragrighttopcorner' + typeString + indexString)
+      d3.select('#dragrighttopcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         })
         .attr('cy', function (d) {
           return d['y'] + 1;
         });
-      d3.select('#draglefttopcorner' + typeString + indexString)
+      d3.select('#draglefttopcorner' + typeString +sectionstring+ indexString)
         .attr('cy', function (d) {
           return d['y'] + 1;
         });
-      d3.select('#dragrightbottomcorner' + typeString + indexString)
+      d3.select('#dragrightbottomcorner' + typeString +sectionstring+ indexString)
         .attr('cx', function (d) {
           return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
         });

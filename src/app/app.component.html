@@ -2,10 +2,10 @@
   <div class="container">
     <div class="row">
       <div class="col-xs-12">
-        <button class="btn btn-success" (click)="ButtonClicked(2)">Add Image</button>
-        <button class="btn btn-success" (click)="ButtonClicked(3)">Add Video</button>
-        <button class="btn btn-success" (click)="ButtonClicked(1)">Add rectangle</button>
-        <button class="btn btn-success" (click)="ButtonClicked(4)">Add text</button>
+        <button class="btn btn-success" (click)="ButtonClicked1('Image')">Add Image</button>
+        <button class="btn btn-success" (click)="ButtonClicked2('Image')">Add Image</button>
+        <button class="btn btn-success" (click)="ButtonClicked1('Video')">Add Video</button>
+        <button class="btn btn-success" (click)="ButtonClicked1('Text')">Add text</button>
         <button class="btn btn-danger" (click)="exitFunc()">Remove</button>
         <p></p>
       </div>
@@ -13,7 +13,8 @@
   </div>
 
   <div style="display: flex; flex-direction: row; height: 100%;">
-    <app-d3 #child style="width: 100%; height:100% "></app-d3>
+    <app-d3 #child1 style="width: 100%; height:100% " [section]="container.sections[0]"></app-d3>
+    <app-d3 #child2 style="width: 100%; height:100% " [section]="container.sections[1]"></app-d3>
 
     <!-- <div style="width: 30%; height: 90%">
        <table align="right" border="1px" style="margin-right: 60px">
