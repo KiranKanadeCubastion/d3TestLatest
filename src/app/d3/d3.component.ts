@@ -56,7 +56,8 @@ export class D3Component implements AfterViewInit, DoCheck {
 
 
       this.section.items.forEach((value, index, array) => {
-        this.draggable(value, this);
+        if (value.active)
+          this.draggable(value, this);
       });
       this.initIndex();
     } else {
@@ -124,11 +125,18 @@ export class D3Component implements AfterViewInit, DoCheck {
 
   exitFunc() {
     //this.Form.disable();
-    d3.select('#g' + this.currentType + this.section.name + this.currentIndex).remove();
-    this.section.items.splice(this.currArrayIndex, 1);
-    this.currArrayIndex = '0';
-    if (this.section.items.length === 0) {
-      this.NotlastElement = false;
+    if (this.currentIndex > -1) {
+      const item = this.section.items[this.currentIndex];
+      if (item) {
+        item.active = false;
+      }
+      d3.select('#g' + this.currentType + this.section.name + this.currentIndex).remove();
+      //this.section.items.splice(this.currArrayIndex, 1);
+      this.currArrayIndex = '0';
+      if (this.section.items.length === 0) {
+        this.NotlastElement = false;
+      }
+
     }
 
   }
@@ -147,7 +155,7 @@ export class D3Component implements AfterViewInit, DoCheck {
 
   draggable(iteratorInfo, self) {
     const typeString: string = iteratorInfo.type_cd;
-    const indexString: number = iteratorInfo.index;
+    const indexString: number = iteratorInfo.seq_num;
     const sectionstring: string = this.section.name;
     const dragBarWidth = 2;
 

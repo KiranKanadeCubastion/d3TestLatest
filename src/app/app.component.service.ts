@@ -30,13 +30,13 @@ export class Information {
         'id': 'new_record',
         'name': 'section201',
         'type_cd': 'Image',
-        'width': 30, // percentage
-        'height': 30, // percentage
+        'width': 50, // percentage
+        'height': 20, // percentage
         'alpha': 1,
         'x_coordinate': 10,
         'y_coordinate': 10,
         'section_id': '0',
-        'index': 0,
+        'seq_num': 0,
         'att_id': '',
         'att_name': '',
         'thumbnail_att_id': '',
@@ -62,13 +62,13 @@ export class Information {
         'id': 'new_record',
         'name': 'section202',
         'type_cd': 'Image',
-        'width': 30, // percentage
-        'height': 30, // percentage
+        'width': 50, // percentage
+        'height': 20, // percentage
         'alpha': 1,
         'x_coordinate': 10,
         'y_coordinate': 10,
         'section_id': '0',
-        'index': 0,
+        'seq_num': 0,
         'att_id': '',
         'att_name': '',
         'thumbnail_att_id': '',

@@ -17,7 +17,7 @@ export class DemoGroupIvgItem {
   desc_text_font_style: string;
   desc_text_font_size: number;
   desc_text_font_color: string;
-  index: number;
+  seq_num: number;
   active: boolean;
   moveEnabled: boolean;
 
@@ -26,13 +26,13 @@ export class DemoGroupIvgItem {
       'id': 'new_record',
       'name': 'section',
       'type_cd': type,
-      'width': 30, // percentage
-      'height': 30, // percentage
+      'width': 50, // percentage
+      'height': 20, // percentage
       'alpha': 1,
       'x_coordinate': 10,
       'y_coordinate': 10,
       'section_id': '0',
-      'index': index,
+      'seq_num': index,
       'att_id': '',
       'att_name': '',
       'thumbnail_att_id': '',
