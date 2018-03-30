@@ -1,8 +1,8 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {FormControl, FormGroup} from "@angular/forms";
 import {D3Component} from "./d3/d3.component";
-import {Information} from "./app.component.service";
-import {DemoGroupIvgContainer} from "./Common/demo-group-ivg-container.model";
+import {DemoAdvanced2Service} from "./demo-advanced2.service";
+import {DemoGroupIvgContainer} from "./common/demo-group-ivg-container.model";
 
 
 @Component({
@@ -18,7 +18,7 @@ export class AppComponent implements OnInit {
 
   container: DemoGroupIvgContainer;
 
-  constructor(public service: Information) {
+  constructor(public service: DemoAdvanced2Service) {
   }
 
   ngOnInit() {

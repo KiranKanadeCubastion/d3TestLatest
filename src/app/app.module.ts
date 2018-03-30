@@ -5,7 +5,7 @@ import {NgModule} from '@angular/core';
 import {AppComponent} from './app.component';
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { D3Component } from './d3/d3.component';
-import {Information} from "./app.component.service";
+import {DemoAdvanced2Service} from "./demo-advanced2.service";
 
 
 @NgModule({
@@ -18,7 +18,7 @@ import {Information} from "./app.component.service";
     FormsModule,
     ReactiveFormsModule
   ],
-  providers: [Information],
+  providers: [DemoAdvanced2Service],
   bootstrap: [AppComponent]
 })
 export class AppModule {

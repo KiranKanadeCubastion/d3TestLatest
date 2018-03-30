@@ -1,7 +1,8 @@
-import {AfterViewInit, Component, DoCheck, ElementRef, Input, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, DoCheck, ElementRef, Input, OnInit, ViewChild} from '@angular/core';
 import * as d3 from 'd3';
-import {DemoGroupIvgSection} from "../Common/demo-group-ivg-section.model";
-import {DemoGroupIvgItem} from "../Common/demo-group-ivg-item.model";
+import {DemoGroupIvgSection} from "../common/demo-group-ivg-section.model";
+import {DemoGroupIvgItem} from "../common/demo-group-ivg-item.model";
+import {DemoAdvanced2Service} from "../demo-advanced2.service";
 
 @Component({
   selector: 'app-d3',
@@ -9,14 +10,13 @@ import {DemoGroupIvgItem} from "../Common/demo-group-ivg-item.model";
   styleUrls: ['./d3.component.css']
 })
 
-
-export class D3Component implements AfterViewInit, DoCheck {
-
+export class D3Component implements OnInit, AfterViewInit, DoCheck {
   @ViewChild('divId') divElement: ElementRef;
-
   @Input() section: DemoGroupIvgSection;
+  @Input() editModeEnabled: boolean = false;
 
   svg;
+
   currentType: any = '0';
   svgWidth: number;
   svgHeight: number;
@@ -24,21 +24,34 @@ export class D3Component implements AfterViewInit, DoCheck {
   globalIndex: any;
   currArrayIndex: any = '0';
   NotlastElement: boolean = true;
+  sectionClicked: boolean = false;
+  curr_iterator: DemoGroupIvgItem;
 
-  curr_iterator: DemoGroupIvgItem = DemoGroupIvgItem.newItem('Image', 0);
+  constructor(private entity_service: DemoAdvanced2Service) {
 
-  constructor() {
+  }
+
+  ngOnInit(): void {
+    this.curr_iterator = this.entity_service.getNewSectionItem({
+      'type': 'Text',
+      'font_name': 'Verdana',
+      'font_style': 'light',
+      'font_size': '24',
+      'font_color': '#FF0000'
+    }, this.section.id, '1');
   }
 
   ngDoCheck() {
 
-    this.svgWidth = this.divElement.nativeElement.offsetWidth - 2;
-    this.svgHeight = this.divElement.nativeElement.offsetHeight - 2;
+    this.svgWidth = this.divElement.nativeElement.offsetWidth;
+    this.svgHeight = this.divElement.nativeElement.offsetHeight;
   }
 
   ngAfterViewInit(): void {
 
     if (this.section) {
+
+      console.log('section is not null', this.section);
       this.svg = d3.select("#" + this.section.name).append('svg')
       //.attr('id', 'svgBorder')
         .attr('width', "100%")
@@ -50,8 +63,8 @@ export class D3Component implements AfterViewInit, DoCheck {
         .attr('height', "100%")
         .attr('width', "100%")
         .attr('fill-opacity', 0)
-        .style('stroke', 'black')
-        .style('stroke-width', 1)
+        /* .style('stroke', 'black')
+         .style('stroke-width', 1)*/
         .attr('id', 'border' + this.section.name);
 
 
@@ -61,6 +74,7 @@ export class D3Component implements AfterViewInit, DoCheck {
       });
       this.initIndex();
     } else {
+      console.log('section is null');
     }
   }
 
@@ -68,17 +82,24 @@ export class D3Component implements AfterViewInit, DoCheck {
     this.globalIndex = this.section.items.length - 1;
   }
 
+
   selected(selectedType, selectedIndex) {
+
     d3.select('#g' + this.currentType + this.section.name + this.currentIndex)
-      .style('stroke-width', '0');
+      .style('stroke-width', '0')
+      .style('fill', '#aaaaaa');
 
     if (selectedIndex !== '-1') {
       //this.Form.enable();
       this.currentType = selectedType;
       this.currentIndex = <any>selectedIndex;
       d3.select('#g' + selectedType + this.section.name + selectedIndex)
-        .style('stroke', 'red')
-        .style('stroke-width', '.4');
+        .style('stroke', '#ff4f4f')
+        .style('stroke-width', '0.5')
+        .style('fill', '#ff4f4f')
+
+      this.sectionClicked = false;
+      console.log(this.sectionClicked);
 
 
       this.section.items.forEach((value, index, array) => {
@@ -87,6 +108,10 @@ export class D3Component implements AfterViewInit, DoCheck {
           this.curr_iterator = value;
         }
       });
+    }
+    else {
+      this.sectionClicked = true;
+      console.log(this.sectionClicked);
     }
   }
 
@@ -157,10 +182,13 @@ export class D3Component implements AfterViewInit, DoCheck {
     const typeString: string = iteratorInfo.type_cd;
     const indexString: number = iteratorInfo.seq_num;
     const sectionstring: string = this.section.name;
-    const dragBarWidth = 2;
+    const dragBarWidth = 1;
 
     d3.select('#border' + this.section.name).on('click', function () {
-      self.selected('-1', '-1');
+
+      if (self.editModeEnabled == true) {
+        self.selected('-1', '-1');
+      }
     });
 
     const newg = this.svg.append('g')
@@ -184,7 +212,7 @@ export class D3Component implements AfterViewInit, DoCheck {
           })
           .attr('height', this.percentageHeightFunc(iteratorInfo.height))
           .attr('width', this.percentageWidthFunc(iteratorInfo.width))
-          .attr('xlink:href', 'https://static.pexels.com/photos/248797/pexels-photo-248797.jpeg')
+          .attr('xlink:href', iteratorInfo.att_name)
           .attr('fill-opacity', .5)
           .attr('cursor', 'move')
           .attr('id', 'dragrect' + typeString + sectionstring + indexString)
@@ -213,228 +241,255 @@ export class D3Component implements AfterViewInit, DoCheck {
           .attr('width', '100%')
           .attr('controls', '')
           .append('xhtml:source')
-          .attr('src', 'http://clips.vorwaerts-gmbh.de/VfE_html5.mp4')
+          .attr('src', iteratorInfo.att_name)
           .attr('type', 'video/mp4');
         break;
       case  'Text':
-        dragrect = newg.append('foreignObject')                             // text
-          .attr('x', function (d) {
-            return d.x;
-          })
-          .attr('y', function (d) {
-            return d.y;
-          })
-          .attr('id', 'dragrect' + typeString + sectionstring + indexString)
-          .attr('height', this.percentageHeightFunc(iteratorInfo.height))
-          .attr('width', this.percentageWidthFunc(iteratorInfo.width))
-          .attr('cursor', 'move')
-          .style('overflow', 'hidden')
-          .style('word-wrap', 'break-word')
-          .call(<any>d3.drag()
-          //.subject(this.subjectRect)
-            .on('drag', dragmove));
+      case  'Text-Static':
+      case  'Text-Dynamic':
+        if (this.editModeEnabled == true) {
+          dragrect = newg.append('foreignObject')                             // text
+            .attr('x', function (d) {
+              return d.x;
+            })
+            .attr('y', function (d) {
+              return d.y;
+            })
+            .attr('id', 'dragrect' + typeString + sectionstring + indexString)
+            .attr('height', this.percentageHeightFunc(iteratorInfo.height))
+            .attr('width', this.percentageWidthFunc(iteratorInfo.width))
+            .attr('cursor', 'move')
+            .style('overflow', 'hidden')
+            .style('word-wrap', 'break-word')
+            .call(<any>d3.drag()
+            //.subject(this.subjectRect)
+              .on('drag', dragmove));
 
-        let text = dragrect.append('xhtml:p')
-          .style('height', '100%')
-          .append('xhtml:font')
-          .attr('size', '5')
-          .text('This is sample text');
-        break;
-
+          let text = dragrect.append('xhtml:p')
+            .style('height', '100%')
+            /*
+             .append('xhtml:font')
+             */
+            .style('font-size', iteratorInfo.desc_text_font_size + 'px')
+            .text(iteratorInfo.desc_text)
+            .style('color', iteratorInfo.desc_text_font_color)
+            .style('overflow', 'hidden')
+            .style('word-wrap', 'break-word');
+          break;
+        }
     }
 
-    newg.append('rect')
-      .attr('x', function (d) {
-        return d.x - (dragBarWidth / 2);
-      })
-      .attr('y', function (d) {
-        return d.y + (dragBarWidth / 2);
-      })
-      .attr('height', this.percentageHeightFunc(iteratorInfo.height) - dragBarWidth)
-      .attr('width', dragBarWidth)
-      .attr('fill-opacity', .5)
-      .attr('id', 'dragbarleft' + typeString + sectionstring + indexString)
-      .attr('cursor', 'ew-resize')
-      .call(<any>d3.drag()
-      // .subject(this.subject)
-        .on('drag', ldragresize));
+    if (this.editModeEnabled == true) {
 
-    newg.append('rect')
-      .attr('x', function (d) {
-        return d.x + self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2);
-      })
-      .attr('y', function (d) {
-        return d.y + (dragBarWidth / 2);
-      })
-      .attr('height', this.percentageHeightFunc(iteratorInfo.height) - dragBarWidth)
-      .attr('width', dragBarWidth)
-      .attr('fill-opacity', .5)
-      .attr('id', 'dragbarright' + typeString + sectionstring + indexString)
-      .attr('cursor', 'ew-resize')
-      .call(<any>d3.drag()
-      // .subject(this.subject)
-        .on('drag', rdragresize));
+      newg.append('rect')
+        .attr('x', function (d) {
+          return d.x - (dragBarWidth / 2);
+        })
+        .attr('y', function (d) {
+          return d.y + (dragBarWidth / 2);
+        })
+        .attr('height', this.percentageHeightFunc(iteratorInfo.height) - dragBarWidth)
+        .attr('width', dragBarWidth)
+        .attr('fill-opacity', .5)
+        .attr('id', 'dragbarleft' + typeString + sectionstring + indexString)
+        .attr('cursor', 'ew-resize')
+        .style('fill', '#aaaaaa')
+        .call(<any>d3.drag()
+        // .subject(this.subject)
+          .on('drag', ldragresize));
 
-    newg.append('rect')
-      .attr('x', function (d) {
-        return d.x + (dragBarWidth / 2);
-      })
-      .attr('y', function (d) {
-        return d.y - (dragBarWidth / 2);
-      })
-      .attr('height', dragBarWidth)
-      .attr('width', this.percentageWidthFunc(iteratorInfo.width) - dragBarWidth)
-      .attr('fill-opacity', .5)
-      .attr('id', 'dragbartop' + typeString + sectionstring + indexString)
-      .attr('cursor', 'ns-resize')
-      .call(<any>d3.drag()
-      // .subject(this.subject)
-        .on('drag', tdragresize));
+      newg.append('rect')
+        .attr('x', function (d) {
+          return d.x + self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2);
+        })
+        .attr('y', function (d) {
+          return d.y + (dragBarWidth / 2);
+        })
+        .attr('height', this.percentageHeightFunc(iteratorInfo.height) - dragBarWidth)
+        .attr('width', dragBarWidth)
+        .attr('fill-opacity', .5)
+        .attr('id', 'dragbarright' + typeString + sectionstring + indexString)
+        .attr('cursor', 'ew-resize')
+        .style('fill', '#aaaaaa')
+        .call(<any>d3.drag()
+        // .subject(this.subject)
+          .on('drag', rdragresize));
 
-    newg.append('rect')
-      .attr('x', function (d) {
-        return d.x + (dragBarWidth / 2);
-      })
-      .attr('y', function (d) {
-        return d.y + self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2);
-      })
-      .attr('height', dragBarWidth)
-      .attr('width', this.percentageWidthFunc(iteratorInfo.width) - dragBarWidth)
-      .attr('fill-opacity', .5)
-      .attr('id', 'dragbarbottom' + typeString + sectionstring + indexString)
-      .attr('cursor', 'ns-resize')
-      .call(<any>d3.drag()
-      // .subject(this.subject)
-        .on('drag', bdragresize));
+      newg.append('rect')
+        .attr('x', function (d) {
+          return d.x + (dragBarWidth / 2);
+        })
+        .attr('y', function (d) {
+          return d.y - (dragBarWidth / 2);
+        })
+        .attr('height', dragBarWidth)
+        .attr('width', this.percentageWidthFunc(iteratorInfo.width) - dragBarWidth)
+        .attr('fill-opacity', .5)
+        .attr('id', 'dragbartop' + typeString + sectionstring + indexString)
+        .attr('cursor', 'ns-resize')
+        .style('fill', '#aaaaaa')
+        .call(<any>d3.drag()
+        // .subject(this.subject)
+          .on('drag', tdragresize));
 
-    newg.append('circle')
-      .attr('cx', function (d) {
-        return d.x;
-      })
-      .attr('cy', function (d) {
-        return d.y;
-      })
-      .attr('r', 1.5)
-      .attr('fill-opacity', 0)
-      .attr('cursor', 'nwse-resize')
-      .attr('id', 'draglefttopcorner' + typeString + sectionstring + indexString)
-      .call(<any>d3.drag()
-      // .subject(this.subject)
-        .on('drag', ltdragresize));
+      newg.append('rect')
+        .attr('x', function (d) {
+          return d.x + (dragBarWidth / 2);
+        })
+        .attr('y', function (d) {
+          return d.y + self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2);
+        })
+        .attr('height', dragBarWidth)
+        .attr('width', this.percentageWidthFunc(iteratorInfo.width) - dragBarWidth)
+        .attr('fill-opacity', .5)
+        .attr('id', 'dragbarbottom' + typeString + sectionstring + indexString)
+        .attr('cursor', 'ns-resize')
+        .style('fill', '#aaaaaa')
+        .call(<any>d3.drag()
+        // .subject(this.subject)
+          .on('drag', bdragresize));
 
-    newg.append('circle')
-      .attr('cx', function (d) {
-        return d.x;
-      })
-      .attr('cy', function (d) {
-        return d.y + self.percentageHeightFunc(iteratorInfo.height);
-      })
-      .attr('r', 1.5)
-      .attr('fill-opacity', 0)
-      .attr('cursor', 'nesw-resize')
-      .attr('id', 'dragleftbottomcorner' + typeString + sectionstring + indexString)
-      .call(<any>d3.drag()
-      // .subject(this.subject)
-        .on('drag', lbdragresize));
+      newg.append('circle')
+        .attr('cx', function (d) {
+          return d.x;
+        })
+        .attr('cy', function (d) {
+          return d.y;
+        })
+        .attr('r', 1.5)
+        .attr('fill-opacity', 0)
+        .attr('cursor', 'nwse-resize')
+        .attr('id', 'draglefttopcorner' + typeString + sectionstring + indexString)
+        .style('fill', '#aaaaaa')
+        .call(<any>d3.drag()
+        // .subject(this.subject)
+          .on('drag', ltdragresize));
 
-    newg.append('circle')
-      .attr('cx', function (d) {
-        return d.x + self.percentageWidthFunc(iteratorInfo.width);
-      })
-      .attr('cy', function (d) {
-        return d.y;
-      })
-      .attr('r', 1.5)
-      .attr('fill-opacity', 0)
-      .attr('cursor', 'nesw-resize')
-      .attr('id', 'dragrighttopcorner' + typeString + sectionstring + indexString)
-      .call(<any>d3.drag()
-      // .subject(this.subject)
-        .on('drag', rtdragresize));
+      newg.append('circle')
+        .attr('cx', function (d) {
+          return d.x;
+        })
+        .attr('cy', function (d) {
+          return d.y + self.percentageHeightFunc(iteratorInfo.height);
+        })
+        .attr('r', 1.5)
+        .attr('fill-opacity', 0)
+        .attr('cursor', 'nesw-resize')
+        .attr('id', 'dragleftbottomcorner' + typeString + sectionstring + indexString)
+        .style('fill', '#aaaaaa')
+        .call(<any>d3.drag()
+        // .subject(this.subject)
+          .on('drag', lbdragresize));
 
-    newg.append('circle')
-      .attr('cx', function (d) {
-        return d.x + self.percentageWidthFunc(iteratorInfo.width);
-      })
-      .attr('cy', function (d) {
-        return d.y + self.percentageHeightFunc(iteratorInfo.height);
-      })
-      .attr('fill-opacity', 0)
-      .attr('id', 'dragrightbottomcorner' + typeString + sectionstring + indexString)
-      .attr('r', 1.5)
-      .attr('cursor', 'nwse-resize')
-      .call(<any>d3.drag()
-      // .subject(this.subject)
-        .on('drag', rbdragresize));
+      newg.append('circle')
+        .attr('cx', function (d) {
+          return d.x + self.percentageWidthFunc(iteratorInfo.width);
+        })
+        .attr('cy', function (d) {
+          return d.y;
+        })
+        .attr('r', 1.5)
+        .attr('fill-opacity', 0)
+        .attr('cursor', 'nesw-resize')
+        .attr('id', 'dragrighttopcorner' + typeString + sectionstring + indexString)
+        .style('fill', '#aaaaaa')
+        .call(<any>d3.drag()
+        // .subject(this.subject)
+          .on('drag', rtdragresize));
+
+      newg.append('circle')
+        .attr('cx', function (d) {
+          return d.x + self.percentageWidthFunc(iteratorInfo.width);
+        })
+        .attr('cy', function (d) {
+          return d.y + self.percentageHeightFunc(iteratorInfo.height);
+        })
+        .attr('fill-opacity', 0)
+        .attr('id', 'dragrightbottomcorner' + typeString + sectionstring + indexString)
+        .attr('r', 1.5)
+        .attr('cursor', 'nwse-resize')
+        .style('fill', '#aaaaaa')
+        .call(<any>d3.drag()
+        // .subject(this.subject)
+          .on('drag', rbdragresize));
+    }
 
     function dragmove(d) {
-      self.selected(typeString, indexString);
-      d3.select('#dragrect' + typeString + sectionstring + indexString)
-        .attr('x', d.x = Math.max(0, Math.min(self.svgWidth - self.percentageWidthFunc(iteratorInfo.width), d3.event.x)))
-        .attr('y', d.y = Math.max(0, Math.min(self.svgHeight - self.percentageHeightFunc(iteratorInfo.height), d3.event.y)));
-      iteratorInfo.x_coordinate = self.reverseWidthFunc(d.x);
-      iteratorInfo.y_coordinate = self.reverseHeightFunc(d.y);
-      d3.select('#dragbarleft' + typeString + sectionstring + indexString)
-        .attr('x', function (d) {
-          return d['x'] - (dragBarWidth / 2);
-        })
-        .attr('y', function (d) {
-          return d['y'] + (dragBarWidth / 2);
-        });
-      d3.select('#dragbarright' + typeString + sectionstring + indexString)
-        .attr('x', function (d) {
-          return d['x'] + self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2);
-        })
-        .attr('y', function (d) {
-          return d['y'] + (dragBarWidth / 2);
-        });
-      d3.select('#dragbartop' + typeString + sectionstring + indexString)
-        .attr('x', function (d) {
-          return d['x'] + (dragBarWidth / 2);
-        })
-        .attr('y', function (d) {
-          return d['y'] - (dragBarWidth / 2);
-        });
-      d3.select('#dragbarbottom' + typeString + sectionstring + indexString)
-        .attr('x', function (d) {
-          return d['x'] + (dragBarWidth / 2);
-        })
-        .attr('y', function (d) {
-          return d['y'] + self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2);
-        });
-      d3.select('#draglefttopcorner' + typeString + sectionstring + indexString)
-        .attr('cx', function (d) {
-          return d['x'];
-        })
-        .attr('cy', function (d) {
-          return d['y'];
-        });
-      d3.select('#dragleftbottomcorner' + typeString + sectionstring + indexString)
-        .attr('cx', function (d) {
-          return d['x'];
-        })
-        .attr('cy', function (d) {
-          return d['y'] + self.percentageHeightFunc(iteratorInfo.height);
-        });
-      d3.select('#dragrighttopcorner' + typeString + sectionstring + indexString)
-        .attr('cx', function (d) {
-          return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
-        })
-        .attr('cy', function (d) {
-          return d['y'];
-        });
-      d3.select('#dragrightbottomcorner' + typeString + sectionstring + indexString)
-        .attr('cx', function (d) {
-          return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
-        })
-        .attr('cy', function (d) {
-          return d['y'] + self.percentageHeightFunc(iteratorInfo.height);
-        });
+
+
+      if (self.editModeEnabled == true) {
+        self.selected(typeString, indexString);
+
+        d3.select('#dragrect' + typeString + sectionstring + indexString)
+          .attr('x', d.x = Math.max(0, Math.min(self.svgWidth - self.percentageWidthFunc(iteratorInfo.width), d3.event.x)))
+          .attr('y', d.y = Math.max(0, Math.min(self.svgHeight - self.percentageHeightFunc(iteratorInfo.height), d3.event.y)));
+        iteratorInfo.x_coordinate = self.reverseWidthFunc(d.x);
+        iteratorInfo.y_coordinate = self.reverseHeightFunc(d.y);
+        d3.select('#dragbarleft' + typeString + sectionstring + indexString)
+          .attr('x', function (d) {
+            return d['x'] - (dragBarWidth / 2);
+          })
+          .attr('y', function (d) {
+            return d['y'] + (dragBarWidth / 2);
+          });
+        d3.select('#dragbarright' + typeString + sectionstring + indexString)
+          .attr('x', function (d) {
+            return d['x'] + self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2);
+          })
+          .attr('y', function (d) {
+            return d['y'] + (dragBarWidth / 2);
+          });
+        d3.select('#dragbartop' + typeString + sectionstring + indexString)
+          .attr('x', function (d) {
+            return d['x'] + (dragBarWidth / 2);
+          })
+          .attr('y', function (d) {
+            return d['y'] - (dragBarWidth / 2);
+          });
+        d3.select('#dragbarbottom' + typeString + sectionstring + indexString)
+          .attr('x', function (d) {
+            return d['x'] + (dragBarWidth / 2);
+          })
+          .attr('y', function (d) {
+            return d['y'] + self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2);
+          });
+        d3.select('#draglefttopcorner' + typeString + sectionstring + indexString)
+          .attr('cx', function (d) {
+            return d['x'];
+          })
+          .attr('cy', function (d) {
+            return d['y'];
+          });
+        d3.select('#dragleftbottomcorner' + typeString + sectionstring + indexString)
+          .attr('cx', function (d) {
+            return d['x'];
+          })
+          .attr('cy', function (d) {
+            return d['y'] + self.percentageHeightFunc(iteratorInfo.height);
+          });
+        d3.select('#dragrighttopcorner' + typeString + sectionstring + indexString)
+          .attr('cx', function (d) {
+            return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
+          })
+          .attr('cy', function (d) {
+            return d['y'];
+          });
+        d3.select('#dragrightbottomcorner' + typeString + sectionstring + indexString)
+          .attr('cx', function (d) {
+            return d['x'] + self.percentageWidthFunc(iteratorInfo.width);
+          })
+          .attr('cy', function (d) {
+            return d['y'] + self.percentageHeightFunc(iteratorInfo.height);
+          });
+      }
     }
 
 
     function ldragresize(d) {
-      self.selected(typeString, indexString);
+      if (self.editModeEnabled == true) {
+
+        self.selected(typeString, indexString);
+      }
       let oldx = d.x;
       d.x = Math.max(0, Math.min(d.x + self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2), d3.event.x));
       iteratorInfo.width = self.reverseWidthFunc(self.percentageWidthFunc(iteratorInfo.width) + (oldx - d.x));
@@ -477,7 +532,10 @@ export class D3Component implements AfterViewInit, DoCheck {
     }
 
     function rdragresize(d) {
-      self.selected(typeString, indexString);
+      if (self.editModeEnabled == true) {
+
+        self.selected(typeString, indexString);
+      }
       let dragx = Math.max(d['x'] + (dragBarWidth / 2), Math.min(self.svgWidth, d['x'] + self.percentageWidthFunc(iteratorInfo.width) + d3.event.dx));
       iteratorInfo.width = self.reverseWidthFunc(dragx - d['x']);
       d3.select('#dragbarright' + typeString + sectionstring + indexString)
@@ -508,7 +566,10 @@ export class D3Component implements AfterViewInit, DoCheck {
     }
 
     function tdragresize(d) {
-      self.selected(typeString, indexString);
+      if (self.editModeEnabled == true) {
+
+        self.selected(typeString, indexString);
+      }
       let oldy = d['y'];
       d['y'] = Math.max(0, Math.min(d['y'] + self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2), d3.event['y']));
       iteratorInfo.height = self.reverseHeightFunc(self.percentageHeightFunc(iteratorInfo.height) + (oldy - d['y']));
@@ -551,7 +612,10 @@ export class D3Component implements AfterViewInit, DoCheck {
     }
 
     function bdragresize(d) {
-      self.selected(typeString, indexString);
+      if (self.editModeEnabled == true) {
+
+        self.selected(typeString, indexString);
+      }
       let dragy = Math.max(d['y'] + (dragBarWidth / 2), Math.min(self.svgHeight, d['y'] + self.percentageHeightFunc(iteratorInfo.height) + d3.event.dy));
       iteratorInfo.height = self.reverseHeightFunc(dragy - d['y']);
       d3.select('#dragbarbottom' + typeString + sectionstring + indexString)
@@ -583,7 +647,10 @@ export class D3Component implements AfterViewInit, DoCheck {
     }
 
     function ltdragresize(d) {
-      self.selected(typeString, indexString);
+      if (self.editModeEnabled == true) {
+
+        self.selected(typeString, indexString);
+      }
       let oldx = d['x'];
       d['x'] = Math.max(0, Math.min(d['x'] + self.percentageWidthFunc(iteratorInfo.width) - (dragBarWidth / 2), d3.event.x));
 
@@ -652,7 +719,10 @@ export class D3Component implements AfterViewInit, DoCheck {
 
 
     function rbdragresize(d) {
-      self.selected(typeString, indexString);
+      if (self.editModeEnabled == true) {
+
+        self.selected(typeString, indexString);
+      }
       let dragy = Math.max(d['y'] + (dragBarWidth / 2), Math.min(self.svgHeight, d['y'] + self.percentageHeightFunc(iteratorInfo.height) + d3.event.dy));
       iteratorInfo.height = self.reverseHeightFunc(dragy - d['y']);
       let dragx = Math.max(d['x'] + (dragBarWidth / 2), Math.min(self.svgWidth, d['x'] + self.percentageWidthFunc(iteratorInfo.width) + d3.event.dx));
@@ -695,7 +765,10 @@ export class D3Component implements AfterViewInit, DoCheck {
 
 
     function lbdragresize(d) {
-      self.selected(typeString, indexString);
+      if (self.editModeEnabled == true) {
+
+        self.selected(typeString, indexString);
+      }
       let dragy = Math.max(d['y'] + (dragBarWidth / 2), Math.min(self.svgHeight, d['y'] + self.percentageHeightFunc(iteratorInfo.height) + d3.event.dy));
       iteratorInfo.height = self.reverseHeightFunc(dragy - d['y']);
       let oldx = d['x'];
@@ -747,7 +820,10 @@ export class D3Component implements AfterViewInit, DoCheck {
     }
 
     function rtdragresize(d) {
-      self.selected(typeString, indexString);
+      if (self.editModeEnabled == true) {
+
+        self.selected(typeString, indexString);
+      }
       let oldy = d['y'];
       d['y'] = Math.max(0, Math.min(d['y'] + self.percentageHeightFunc(iteratorInfo.height) - (dragBarWidth / 2), d3.event.y));
       iteratorInfo.height = self.reverseHeightFunc(self.percentageHeightFunc(iteratorInfo.height) + (oldy - d['y']));
